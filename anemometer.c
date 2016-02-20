@@ -107,6 +107,8 @@ int main (void) {
   double first = 0;
   int pos = 0;
   int frame[50];
+  int delay;
+  int signal_freq = 1210;
   for (;;) {
     v = digitalRead(8);
     if( first > 0 && ((current_timestamp() - first) > 49300) ) {
@@ -115,15 +117,21 @@ int main (void) {
       first = 0;
       pos = 0;
     }
+    // Waiting for signal
+    delay = 120;
     if( first == 0 && v == 1 ) {
       first = current_timestamp();
+      // Decoding, first time
+      delay = signal_freq + signal_freq/2 - delay;
     }
     if( first > 0 ) {
       frame[pos++] = v;
+      // Decoding
+      delay = signal_freq;
     }
 
     diff = current_timestamp() - t2;
-    while( diff < 1210 ) {
+    while( diff < delay ) {
         nanosleep(&req, NULL);
         diff = current_timestamp() - t2;
     }
