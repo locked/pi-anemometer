@@ -53,23 +53,24 @@ def parse_frame(frame):
   wind_speed_inv.reverse()
 
   print "dir:   ", wind_dir, wind_dir_minv
-  print "inv dir:   ", wind_dir_inv
+  #print "inv dir:   ", wind_dir_inv
   if wind_dir_minv != wind_dir_inv:
     print "wind direction mismatch"
     #return
 
   print "speed: ", wind_speed, wind_speed_minv
-  print "inv speed: ", wind_speed_inv
+  #print "inv speed: ", wind_speed_inv
   if wind_speed_minv != wind_speed_inv:
     print "wind speed mismatch"
     #return
 
-  print "checksum: ", checksum
+  # TODO: verify checksum
+  #print "checksum: ", checksum
 
   wind_dir_int = int("".join([str(b) for b in wind_dir_minv]), 2)
   wind_speed_int = int("".join([str(b) for b in wind_speed_minv]), 2)
-  print "dir int:   ", wind_dir_int, wind_dir_list[wind_dir_int]
-  print "speed int: ", wind_speed_int
+  print "dir int:   %d => %s" % (wind_dir_int, wind_dir_list[wind_dir_int])
+  print "speed int: %d => %.1f meter/sec" % (wind_speed_int, wind_speed_int * 0.1)
   
 
 raw_frame = []
