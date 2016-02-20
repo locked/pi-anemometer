@@ -74,31 +74,29 @@ def parse_frame(frame):
 
 raw_frame = []
 first = 0
+freq_delay = 0.00093
 while True:
+  start = int(round(time.time() * 1000000))
   v = GPIO.input(pin)
 
-  elapsed_since_first = int(round(time.time() * 1000)) - first
-  if elapsed_since_first > 49:
-    # Data raw_frame is about 50 msec length,
-    # if duration > 100, reset
+  if len(raw_frame) >= 41:
+    # Data raw_frame is 41 bits long and last about 49 msec
     if len(raw_frame) > 0:
       #print "Data Frame (length:%d):" % len(raw_frame)
       frame = raw_frame[0:41]
       parse_frame(frame)
     raw_frame = []
     first = 0
+  freq = None
   if len(raw_frame) == 0 and v == 1:
-    first = int(round(time.time() * 1000))
+    first = int(round(time.time() * 1000000))
+    freq = freq_delay + freq_delay/3
   if first > 0:
     raw_frame.append(v)
-
-  #elapsed = int(round(time.time() * 1000)) - start
-  #print elapsed
-  #while elapsed < 1:
-  #  time.sleep(0.000001)
-  #  elapsed = int(round(time.time() * 1000)) - start
+    freq = freq_delay
 
   #time.sleep(0.00095)  # not too bad
   #time.sleep(0.00094)  # good too
-  time.sleep(0.00093)  # best ?
+  #time.sleep(0.00093)  # best ?
+  if freq: time.sleep(freq)
 
