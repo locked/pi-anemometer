@@ -3,6 +3,11 @@ from collections import deque
 import time
 import json
 
+"""
+ Based on:
+   https://www.john.geek.nz/2011/07/la-crosse-tx20-anemometer-communication-protocol/
+"""
+
 #GPIO.setmode(GPIO.BOARD)
 #pin = 3
 
