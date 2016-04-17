@@ -81,6 +81,7 @@ def parse_frame(frame):
 raw_frame = []
 first = 0
 freq_delay = 0.00093
+#last_frame = 0
 while True:
   start = int(round(time.time() * 1000000))
   v = GPIO.input(pin)
@@ -90,7 +91,11 @@ while True:
     if len(raw_frame) > 0:
       #print "Data Frame (length:%d):" % len(raw_frame)
       frame = raw_frame[0:41]
+      #time_since_last_frame = int(round(time.time() * 1000000)) - last_frame
+      #print time_since_last_frame # ~ 2140000
       parse_frame(frame)
+      time.sleep(2.1)
+      #last_frame = int(round(time.time() * 1000000))
     raw_frame = []
     first = 0
   freq = None
