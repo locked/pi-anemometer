@@ -12,7 +12,7 @@ import json
 #pin = 3
 
 GPIO.setmode(GPIO.BCM)
-pin = 2
+pin = 18
 
 GPIO.setup(pin, GPIO.IN)
 
