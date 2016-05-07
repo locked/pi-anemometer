@@ -7,7 +7,7 @@ import sys
 #pin = 3
 
 GPIO.setmode(GPIO.BCM)
-pin = 4
+pin = 17
 
 GPIO.setup(pin, GPIO.IN)
 
