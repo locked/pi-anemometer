@@ -79,8 +79,9 @@ class Anemometer(threading.Thread):
     #print "speed int: %d => %.1f meter/sec" % (wind_speed_int, wind_speed_int * 0.1)
     item = {"type": "wind_direction", "sensor": "external", "ts": time.time(), "value": self.wind_dir_list[wind_dir_int]}
     q.put(item)
-    item = {"type": "wind_speed", "sensor": "external", "ts": time.time(), "value": round(wind_speed_int * 0.1, 2), "unit": "m/s"}
-    q.put(item)
+    if wind_speed_int > 0:
+      item = {"type": "wind_speed", "sensor": "external", "ts": time.time(), "value": round(wind_speed_int * 0.1, 2), "unit": "m/s"}
+      q.put(item)
   
   def run(self):
     self.init_gpio()
@@ -159,15 +160,17 @@ class Temp(threading.Thread):
   def run(self):
     self.init_i2c()
     while True:
-      temp = self.sensor_mcp.readTempC()
+      #temp = self.sensor_mcp.readTempC()
       #print 'Temp(MCP): {0:0.3F} *C'.format(temp)
       #print 'Temp(BMP): {0:0.3f} *C'.format(self.sensor_bmp.read_temperature())
       #print 'Pressure = {0:0.2f} Pa'.format(sensor.read_pressure())
       #print 'Altitude = {0:0.2f} m'.format(sensor.read_altitude())
       #print 'Sealevel Pressure = {0:0.2f} Pa'.format(sensor.read_sealevel_pressure())
-      item = {"type": "temp", "sensor": "mcp", "ts": time.time(), "value": temp}
+      item = {"type": "temp", "sensor": "mcp", "ts": time.time(), "value": self.sensor_mcp.readTempC()}
       q.put(item)
-      time.sleep(1)
+      item = {"type": "temp", "sensor": "bmp", "ts": time.time(), "value": self.sensor_bmp.read_temperature()}
+      q.put(item)
+      time.sleep(30)
 
 
 q = Queue()
@@ -192,8 +195,9 @@ while True:
 
   if len(items) > 0:
     print items
-    data = {"items": items}
-    res = requests.post(ws_url, data)
+    #data = "items="+json.dumps(items)
+    headers = {'content-type': 'application/json'}
+    res = requests.post(ws_url, data=json.dumps({"items": items}), headers=headers)
     print res
 
   time.sleep(2)
