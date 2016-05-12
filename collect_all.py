@@ -131,6 +131,7 @@ class Pluviometer(threading.Thread):
     self.init_gpio()
     count_one = 0
     last_v = 0
+    start_time = time.time()
     while True:
       v = GPIO.input(self.pin)
       if last_v == 1 and v == 1:
@@ -138,8 +139,10 @@ class Pluviometer(threading.Thread):
       else:
         if count_one >= 8 and v == 0:
           #print "Bascule with %d" % count_one
-          item = {"type": "pluvio", "sensor": "external", "ts": time.time(), "value": count_one}
-          q.put(item)
+          if (time.time() - start_time) > 120:
+            # Ignore first 2 minutes signal, as it seems to be bogus
+            item = {"type": "pluvio", "sensor": "external", "ts": time.time(), "value": count_one}
+            q.put(item)
         count_one = 0
       last_v = v
       #if count_one > 3:

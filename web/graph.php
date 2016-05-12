@@ -64,9 +64,9 @@ foreach( $types as $type ) {
 
     var weather_data = {
       "temp": [
-        ['Date', 'MCP', 'BMP'],
+        ['Date', 'MCP', 'BMP', 'RPI'],
 	<?php $i = 0; foreach( $res["temp"] as $date => $r ): ?>
-          ['<?php echo $date ?>', <?php echo $r["value_mcp"] ?>, <?php echo $r["value_bmp"] ?>]<?php echo ++$i < count($res["temp"]) ? "," : ""; ?>
+          ['<?php echo $date ?>', <?php echo $r["value_mcp"] ?>, <?php echo $r["value_bmp"] ?>, <?php echo floatval($r["value_rpi"]); ?>]<?php echo ++$i < count($res["temp"]) ? "," : ""; ?>
 	<?php endforeach; ?>
       ],
       "pressure": [
