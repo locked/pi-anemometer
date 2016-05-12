@@ -170,7 +170,13 @@ class Temp(threading.Thread):
       q.put(item)
       item = {"type": "temp", "sensor": "bmp", "ts": time.time(), "value": self.sensor_bmp.read_temperature()}
       q.put(item)
-      time.sleep(30)
+      item = {"type": "pressure", "sensor": "bmp", "ts": time.time(), "value": self.sensor_bmp.read_pressure()}
+      q.put(item)
+      item = {"type": "altitude", "sensor": "bmp", "ts": time.time(), "value": self.sensor_bmp.read_altitude()}
+      q.put(item)
+      item = {"type": "sealevel_pressure", "sensor": "bmp", "ts": time.time(), "value": self.sensor_bmp.read_sealevel_pressure()}
+      q.put(item)
+      time.sleep(60)
 
 
 q = Queue()

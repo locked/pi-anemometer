@@ -1,0 +1,9 @@
+CREATE TABLE raw (
+  id INTEGER PRIMARY KEY AUTO_INCREMENT,
+  type VARCHAR(32) NOT NULL,
+  sensor VARCHAR(32) NOT NULL,
+  ts DECIMAL(20,4) NOT NULL,
+  value TEXT NOT NULL,
+  unit VARCHAR(32),
+  UNIQUE(type, sensor, ts)
+);
