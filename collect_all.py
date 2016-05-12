@@ -61,13 +61,13 @@ class Anemometer(threading.Thread):
     #print "dir:   ", wind_dir, wind_dir_minv
     #print "inv dir:   ", wind_dir_inv
     if wind_dir_minv != wind_dir_inv:
-      print "wind direction mismatch"
+      #print "wind direction mismatch"
       return
   
     #print "speed: ", wind_speed, wind_speed_minv
     #print "inv speed: ", wind_speed_inv
     if wind_speed_minv != wind_speed_inv:
-      print "wind speed mismatch"
+      #print "wind speed mismatch"
       return
   
     # TODO: verify checksum
@@ -134,13 +134,13 @@ class Pluviometer(threading.Thread):
         count_one += 1
       else:
         if count_one >= 8 and v == 0:
-          print "Bascule with %d" % count_one
+          #print "Bascule with %d" % count_one
+          item = {"type": "pluvio", "sensor": "external", "ts": time.time(), "value": 1}
+          q.put(item)
         count_one = 0
       last_v = v
-      if count_one > 3:
-        #print count_one
-        item = {"type": "pluvio", "sensor": "external", "ts": time.time(), "value": 1}
-        q.put(item)
+      #if count_one > 3:
+      #  print count_one
       #sys.stdout.write(str(v))
       #sys.stdout.flush()
       time.sleep(0.004)
@@ -191,7 +191,6 @@ while True:
     items.append(item)
 
   if len(items) > 0:
-    print "Results:"
     print items
     data = {"items": items}
     res = requests.post(ws_url, data)
