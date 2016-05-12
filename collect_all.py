@@ -4,8 +4,10 @@ import RPi.GPIO as GPIO
 import time
 import json
 import sys
+import re
 import requests
 import threading
+from subprocess import *
 from multiprocessing import Queue
 import Adafruit_BMP.BMP085 as BMP085
 import Adafruit_MCP9808.MCP9808 as MCP9808
@@ -136,14 +138,12 @@ class Pluviometer(threading.Thread):
       else:
         if count_one >= 8 and v == 0:
           #print "Bascule with %d" % count_one
-          item = {"type": "pluvio", "sensor": "external", "ts": time.time(), "value": 1}
+          item = {"type": "pluvio", "sensor": "external", "ts": time.time(), "value": count_one}
           q.put(item)
         count_one = 0
       last_v = v
       #if count_one > 3:
       #  print count_one
-      #sys.stdout.write(str(v))
-      #sys.stdout.flush()
       time.sleep(0.004)
 
 
@@ -156,6 +156,14 @@ class Temp(threading.Thread):
     self.sensor_mcp = MCP9808.MCP9808()
     self.sensor_mcp.begin()
     self.sensor_bmp = BMP085.BMP085()
+
+
+  def readRpiSoC(self):
+    cmd = ["/opt/vc/bin/vcgencmd", "measure_temp"]
+    out = Popen(cmd, stdout=PIPE)
+    (sout, _) = out.communicate()
+    gs = re.match("temp=([0-9\.]+)", sout)
+    return float(gs.group(1)) if gs else None
 
   def run(self):
     self.init_i2c()
@@ -174,9 +182,13 @@ class Temp(threading.Thread):
       q.put(item)
       item = {"type": "altitude", "sensor": "bmp", "ts": time.time(), "value": self.sensor_bmp.read_altitude()}
       q.put(item)
-      item = {"type": "sealevel_pressure", "sensor": "bmp", "ts": time.time(), "value": self.sensor_bmp.read_sealevel_pressure()}
-      q.put(item)
-      time.sleep(60)
+      temp_soc = self.readRpiSoC()
+      if temp_soc:
+        item = {"type": "temp", "sensor": "rpi", "ts": time.time(), "value": temp_soc}
+        q.put(item)
+      #item = {"type": "sealevel_pressure", "sensor": "bmp", "ts": time.time(), "value": self.sensor_bmp.read_sealevel_pressure()}
+      #q.put(item)
+      time.sleep(120)
 
 
 q = Queue()
@@ -200,10 +212,10 @@ while True:
     items.append(item)
 
   if len(items) > 0:
-    print items
+    #print items
     #data = "items="+json.dumps(items)
     headers = {'content-type': 'application/json'}
     res = requests.post(ws_url, data=json.dumps({"items": items}), headers=headers)
-    print res
+    #print res
 
-  time.sleep(2)
+  time.sleep(20)
