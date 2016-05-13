@@ -8,7 +8,6 @@ $types = array(
 	"wind_direction",
 	"pressure",
 	"altitude",
-	"sealevel_pressure",
 	"pluvio",
 );
 

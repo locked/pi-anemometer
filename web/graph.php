@@ -6,6 +6,7 @@ $types = array(
 	"temp",
 	"pressure",
 	"wind_speed",
+	"pluvio",
 );
 
 $summarize = 600;
@@ -34,7 +35,7 @@ if( isset($_GET["until"]) ) {
 
 $res = array();
 foreach( $types as $type ) {
-	$q = "SELECT round(ts/".$summarize.") * ".$summarize." as rts, sensor, avg(value) as value FROM raw WHERE ts > :start_ts AND ts < :end_ts AND type = :type GROUP BY rts, sensor ORDER BY rts ASC";
+	$q = "SELECT round(ts/".$summarize.") * ".$summarize." as rts, sensor, avg(value) as value, count(*) as count FROM raw WHERE ts > :start_ts AND ts < :end_ts AND type = :type GROUP BY rts, sensor ORDER BY rts ASC";
 	$stmt = $db->prepare($q);
 	$args = array(
 		"type" => $type,
@@ -51,6 +52,7 @@ foreach( $types as $type ) {
 			$res[$ts] = array();
 		}
 		$tmpres[$ts]["value_".$row["sensor"]] = $row["value"];
+		$tmpres[$ts]["count_".$row["sensor"]] = $row["count"];
 	}
 	$res[$type] = $tmpres;
 }
@@ -64,9 +66,9 @@ foreach( $types as $type ) {
 
     var weather_data = {
       "temp": [
-        ['Date', 'MCP', 'BMP', 'RPI'],
+        ['Date', 'MCP', 'BMP'],
 	<?php $i = 0; foreach( $res["temp"] as $date => $r ): ?>
-          ['<?php echo $date ?>', <?php echo $r["value_mcp"] ?>, <?php echo $r["value_bmp"] ?>, <?php echo floatval($r["value_rpi"]); ?>]<?php echo ++$i < count($res["temp"]) ? "," : ""; ?>
+          ['<?php echo $date ?>', <?php echo $r["value_mcp"] ?>, <?php echo $r["value_bmp"] ?>]<?php echo ++$i < count($res["temp"]) ? "," : ""; ?>
 	<?php endforeach; ?>
       ],
       "pressure": [
@@ -79,6 +81,12 @@ foreach( $types as $type ) {
         ['Date', 'Wind Speed'],
 	<?php $i = 0; foreach( $res["wind_speed"] as $date => $r ): ?>
           ['<?php echo $date ?>', <?php echo $r["value_external"] ?>]<?php echo ++$i < count($res["wind_speed"]) ? "," : ""; ?>
+	<?php endforeach; ?>
+      ],
+      "pluvio": [
+        ['Date', 'cumul (ml)'],
+	<?php $i = 0; $last_v = 0; foreach( $res["pluvio"] as $date => $r ): ?>
+          ['<?php echo $date ?>', <?php $last_v += 3 * $r["count_external"]; echo $last_v; ?>]<?php echo ++$i < count($res["pluvio"]) ? "," : ""; ?>
 	<?php endforeach; ?>
       ]
     };
@@ -101,6 +109,7 @@ foreach( $types as $type ) {
       drawChart("temp");
       drawChart("pressure");
       drawChart("wind_speed");
+      drawChart("pluvio");
     }
     </script>
   </head>
@@ -109,5 +118,6 @@ foreach( $types as $type ) {
     <div id="temp_chart" style="width: 1100px; height: 600px"></div>
     <div id="pressure_chart" style="width: 1100px; height: 600px"></div>
     <div id="wind_speed_chart" style="width: 1100px; height: 600px"></div>
+    <div id="pluvio_chart" style="width: 1100px; height: 600px"></div>
   </body>
 </html>
