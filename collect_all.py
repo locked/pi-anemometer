@@ -17,6 +17,7 @@ GPIO.setmode(GPIO.BCM)
 
 class Anemometer(threading.Thread):
   pin = 18
+  last_wind_dir_int = None
 
   wind_dir_list = {
   0: "N",
@@ -79,8 +80,12 @@ class Anemometer(threading.Thread):
     wind_speed_int = int("".join([str(b) for b in wind_speed_minv]), 2)
     #print "dir int:   %d => %s" % (wind_dir_int, self.wind_dir_list[wind_dir_int])
     #print "speed int: %d => %.1f meter/sec" % (wind_speed_int, wind_speed_int * 0.1)
-    item = {"type": "wind_direction", "sensor": "external", "ts": time.time(), "value": self.wind_dir_list[wind_dir_int]}
-    q.put(item)
+
+    if self.last_wind_dir_int is not None and self.last_wind_dir_int <> wind_dir_int:
+      item = {"type": "wind_direction", "sensor": "external", "ts": time.time(), "value": self.wind_dir_list[wind_dir_int]}
+      q.put(item)
+    self.last_wind_dir_int = wind_dir_int
+
     if wind_speed_int > 0:
       item = {"type": "wind_speed", "sensor": "external", "ts": time.time(), "value": round(wind_speed_int * 0.1, 2), "unit": "m/s"}
       q.put(item)
