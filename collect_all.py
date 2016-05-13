@@ -204,9 +204,9 @@ q = Queue()
 a = Anemometer()
 a.daemon = True
 a.start()
-a = Pluviometer()
-a.daemon = True
-a.start()
+#a = Pluviometer()
+#a.daemon = True
+#a.start()
 a = Temp()
 a.daemon = True
 a.start()
