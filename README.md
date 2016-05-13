@@ -31,3 +31,8 @@ raspi-config
 reboot
 </pre>
 
+Check support:
+<pre>
+i2cdetect -y 1
+</pre>
+
