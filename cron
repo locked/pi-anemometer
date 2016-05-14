@@ -1,0 +1,2 @@
+* *	* * *	/root/pi-anemometer/start.sh >/var/log/pi-anemometer_start.log 2>&1
+

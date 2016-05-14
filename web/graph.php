@@ -9,8 +9,6 @@ $types = array(
 	"pluvio",
 );
 
-$summarize = 600;
-
 $start_ts = time() - 86400;
 $end_ts = time();
 
@@ -18,7 +16,7 @@ if( isset($_GET["from"]) ) {
 	if( preg_match("/\-(\d+)h[our]*/", $_GET["from"], $matches) ) {
 		$start_ts = strtotime("-".$matches[1]."hour");
 	} elseif( preg_match("/\-(\d+)d[ay]*/", $_GET["from"], $matches) ) {
-		$start_ts = strtotime("-".$matches[1]."hour");
+		$start_ts = strtotime("-".$matches[1]."day");
 	} elseif( preg_match("/\d+/", $_GET["from"]) ) {
 		$start_ts = $_GET["from"];
 	}
@@ -27,15 +25,18 @@ if( isset($_GET["until"]) ) {
 	if( preg_match("/\-(\d+)h[our]*/", $_GET["until"], $matches) ) {
 		$end_ts = strtotime("-".$matches[1]."hour");
 	} elseif( preg_match("/\-(\d+)d[ay]*/", $_GET["until"], $matches) ) {
-		$end_ts = strtotime("-".$matches[1]."hour");
+		$end_ts = strtotime("-".$matches[1]."day");
 	} elseif( preg_match("/\d+/", $_GET["until"]) ) {
 		$end_ts = $_GET["until"];
 	}
 }
 
+$summarize = 10 * intval(($end_ts - $start_ts) / 3600);
+
 $res = array();
 foreach( $types as $type ) {
 	$q = "SELECT round(ts/".$summarize.") * ".$summarize." as rts, sensor, avg(value) as value, count(*) as count FROM raw WHERE ts > :start_ts AND ts < :end_ts AND type = :type GROUP BY rts, sensor ORDER BY rts ASC";
+	//$q = "SELECT ts as rts, sensor, avg(value) as value, count(*) as count FROM raw WHERE ts > :start_ts AND ts < :end_ts AND type = :type GROUP BY rts, sensor ORDER BY rts ASC";
 	$stmt = $db->prepare($q);
 	$args = array(
 		"type" => $type,
@@ -45,16 +46,39 @@ foreach( $types as $type ) {
 	//echo "q:$q args:".json_encode($args)."]<br>";
 	$stmt->execute($args);
 	$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+	//echo "rows:".count($rows)."<br>";
 	$tmpres = array();
+	$sensors = array();
 	foreach( $rows as $row ) {
-		$ts = date("Y-m-d H:i:s", $row["rts"]);
-		if( !isset($res[$ts]) ) {
-			$res[$ts] = array();
+		//echo json_encode($row)."<br>";
+		$ts = $row["rts"]; //date("Y-m-d H:i:s", $row["rts"]);
+		if( !isset($tmpres[$ts]) ) {
+			$tmpres[$ts] = array();
 		}
-		$tmpres[$ts]["value_".$row["sensor"]] = $row["value"];
-		$tmpres[$ts]["count_".$row["sensor"]] = $row["count"];
+		$tmpres[$ts][$row["sensor"]]["value"] = round($row["value"], 2);
+		$tmpres[$ts][$row["sensor"]]["count"] = $row["count"];
+		$sensors[$row["sensor"]] = $row["sensor"];
 	}
-	$res[$type] = $tmpres;
+	$keys = array_keys($tmpres);
+	$first = $keys[0];
+	$last = $keys[count($keys)-1];
+	$finalres = array();
+	for( $i=$first; $i<=$last; $i+=$summarize ) {
+		$ts = date("Y-m-d H:i:s", $i);
+		foreach( $sensors as $sensor ) {
+			if( isset($tmpres[$i]) ) {
+				$finalres[$ts] = $tmpres[$i];
+			} else {
+				if( !isset($finalres[$ts]) ) {
+					$finalres[$ts] = array();
+				}
+				$finalres[$ts][$sensor]["value"] = null;
+				$finalres[$ts][$sensor]["count"] = null;
+			}
+		}
+	}
+	//print_r($finalres);
+	$res[$type] = $finalres;
 }
 
 ?>
@@ -68,25 +92,32 @@ foreach( $types as $type ) {
       "temp": [
         ['Date', 'MCP', 'BMP'],
 	<?php $i = 0; foreach( $res["temp"] as $date => $r ): ?>
-          ['<?php echo $date ?>', <?php echo $r["value_mcp"] ?>, <?php echo $r["value_bmp"] ?>]<?php echo ++$i < count($res["temp"]) ? "," : ""; ?>
+          ['<?php echo $date ?>',
+<?php echo is_null($r["mcp"]["value"]) ? "null" : $r["mcp"]["value"]; ?>,
+<?php echo is_null($r["bmp"]["value"]) ? "null" : $r["bmp"]["value"]; ?>]
+<?php echo ++$i < count($res["temp"]) ? "," : ""; ?>
 	<?php endforeach; ?>
       ],
       "pressure": [
         ['Date', 'Pressure'],
 	<?php $i = 0; foreach( $res["pressure"] as $date => $r ): ?>
-          ['<?php echo $date ?>', <?php echo $r["value_bmp"] ?>]<?php echo ++$i < count($res["pressure"]) ? "," : ""; ?>
+          ['<?php echo $date ?>',
+<?php echo is_null($r["bmp"]["value"]) ? "null" : $r["bmp"]["value"]; ?>]
+<?php echo ++$i < count($res["pressure"]) ? "," : ""; ?>
 	<?php endforeach; ?>
       ],
       "wind_speed": [
         ['Date', 'Wind Speed'],
 	<?php $i = 0; foreach( $res["wind_speed"] as $date => $r ): ?>
-          ['<?php echo $date ?>', <?php echo $r["value_external"] ?>]<?php echo ++$i < count($res["wind_speed"]) ? "," : ""; ?>
+          ['<?php echo $date ?>',
+<?php echo is_null($r["external"]["value"]) ? "null" : $r["external"]["value"]; ?>]
+<?php echo ++$i < count($res["wind_speed"]) ? "," : ""; ?>
 	<?php endforeach; ?>
       ],
       "pluvio": [
         ['Date', 'cumul (ml)'],
 	<?php $i = 0; $last_v = 0; foreach( $res["pluvio"] as $date => $r ): ?>
-          ['<?php echo $date ?>', <?php $last_v += 3 * $r["count_external"]; echo $last_v; ?>]<?php echo ++$i < count($res["pluvio"]) ? "," : ""; ?>
+          ['<?php echo $date ?>', <?php $last_v += 3 * $r["external"]["count"]; echo $last_v; ?>]<?php echo ++$i < count($res["pluvio"]) ? "," : ""; ?>
 	<?php endforeach; ?>
       ]
     };
