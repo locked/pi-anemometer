@@ -221,7 +221,7 @@ a.start()
 
 ws_url = "http://php.lunasys.fr/weather/save.php"
 
-max_items = 3000
+max_items = 5000
 items = []
 while True:
   while not q.empty():
@@ -235,7 +235,7 @@ while True:
     #data = "items="+json.dumps(items)
     headers = {'content-type': 'application/json'}
     try:
-      res = requests.post(ws_url, data=json.dumps({"items": items}), headers=headers, timeout=3)
+      res = requests.post(ws_url, data=json.dumps({"items": items}), headers=headers, timeout=60)
       if res.status_code == 200 and res.json['status'] == 0:
         items = []
       else:
