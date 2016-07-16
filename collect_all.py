@@ -5,6 +5,8 @@ import time
 import json
 import sys
 import re
+import logging
+import resource
 import requests
 import threading
 from subprocess import *
@@ -198,6 +200,12 @@ class Temp(threading.Thread):
       #q.put(item)
       time.sleep(120)
 
+def get_memory_usage():
+  return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000
+
+
+logging.basicConfig(filename='/var/log/weather.log', format='%(asctime)s %(message)s', level=logging.INFO)
+logging.info("start")
 
 q = Queue()
 
@@ -213,17 +221,41 @@ a.start()
 
 ws_url = "http://php.lunasys.fr/weather/save.php"
 
+max_items = 3000
+items = []
 while True:
-  items = []
   while not q.empty():
     item = q.get()
     items.append(item)
+
+  #print "items before:", len(items)
 
   if len(items) > 0:
     #print items
     #data = "items="+json.dumps(items)
     headers = {'content-type': 'application/json'}
-    res = requests.post(ws_url, data=json.dumps({"items": items}), headers=headers)
-    #print res
+    try:
+      res = requests.post(ws_url, data=json.dumps({"items": items}), headers=headers, timeout=3)
+      if res.status_code == 200 and res.json['status'] == 0:
+        items = []
+      else:
+        logging.error("error when sending data, invalid return code:[%d] or invalid response" % (int(res.status_code), res.text))
+        time.sleep(300)
+    except Exception as e:
+      logging.error("exception when sending data:[%s]" % str(e))
+      time.sleep(300)
 
-  time.sleep(20)
+  if len(items) > max_items:
+    logging.warning("max items [%d/%d] reached" % (len(items), max_items))
+    try:
+      memory_usage = get_memory_usage()
+      logging.warning("max items memory_usage:[%dMB]" % int(memory_usage))
+    except:
+      pass
+    items = items[-max_items:]
+
+  #print "items:", len(items)
+
+  time.sleep(60)
+
+logging.info("end")
