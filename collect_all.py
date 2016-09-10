@@ -236,7 +236,7 @@ while True:
     headers = {'content-type': 'application/json'}
     try:
       res = requests.post(ws_url, data=json.dumps({"items": items}), headers=headers, timeout=60)
-      if res.status_code == 200 and res.json['status'] == 0:
+      if res.status_code == 200 and res.json()['status'] == 0:
         items = []
       else:
         logging.error("error when sending data, invalid return code:[%d] or invalid response" % (int(res.status_code), res.text))
