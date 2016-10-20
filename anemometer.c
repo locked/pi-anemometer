@@ -31,6 +31,7 @@ int decode(int frame[], int start, int end, int inverted) {
   int i;
   int v = 0;
   for( i = start; i < end; i++ ) {
+    //printf("v:%d", frame[i]);
     v = v | (abs(inverted - frame[i]) * (int)pow(2.0, (double)(i - start)));
   }
   return v;
@@ -39,11 +40,11 @@ int decode(int frame[], int start, int end, int inverted) {
 void decode_frame(int frame[]) {
       int header, wind_dir, wind_speed, checksum, wind_dir_inv, wind_speed_inv, i;
 
-      /*
       for( i=0; i<=41; i++ ) {
         printf(" %d ", frame[i]);
       }
       printf("\n");
+      /*
       */
 
       header = decode(frame, 0, 5, 1);

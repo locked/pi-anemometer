@@ -40,7 +40,7 @@ def parse_frame(frame):
   frame_header = frame[0:5]
   #print json.dumps(frame_header)
   if json.dumps(frame_header) <> "[1, 1, 0, 1, 1]":
-    #print "invalid frame header"
+    print "invalid frame header", frame_header
     return
 
   print
@@ -80,8 +80,8 @@ def parse_frame(frame):
 
 raw_frame = []
 first = 0
-freq_delay = 0.00093
-#last_frame = 0
+freq_delay = 0.001
+last_frame = 0
 while True:
   start = int(round(time.time() * 1000000))
   v = GPIO.input(pin)
@@ -89,13 +89,13 @@ while True:
   if len(raw_frame) >= 41:
     # Data raw_frame is 41 bits long and last about 49 msec
     if len(raw_frame) > 0:
-      #print "Data Frame (length:%d):" % len(raw_frame)
       frame = raw_frame[0:41]
-      #time_since_last_frame = int(round(time.time() * 1000000)) - last_frame
+      time_since_last_frame = int(round(time.time() * 1000000)) - last_frame
       #print time_since_last_frame # ~ 2140000
+      print "Data Frame (length:%d) time:%f:" % (len(raw_frame), time_since_last_frame), frame
       parse_frame(frame)
-      time.sleep(2.1)
-      #last_frame = int(round(time.time() * 1000000))
+      time.sleep(1.9)
+      last_frame = int(round(time.time() * 1000000))
     raw_frame = []
     first = 0
   freq = None
@@ -109,5 +109,6 @@ while True:
   #time.sleep(0.00095)  # not too bad
   #time.sleep(0.00094)  # good too
   #time.sleep(0.00093)  # best ?
+  #print "freq:", freq
   if freq: time.sleep(freq)
 

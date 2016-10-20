@@ -66,13 +66,13 @@ class Anemometer(threading.Thread):
     #print "dir:   ", wind_dir, wind_dir_minv
     #print "inv dir:   ", wind_dir_inv
     if wind_dir_minv != wind_dir_inv:
-      #print "wind direction mismatch"
+      #logging.error("wind direction mismatch")
       return
   
     #print "speed: ", wind_speed, wind_speed_minv
     #print "inv speed: ", wind_speed_inv
     if wind_speed_minv != wind_speed_inv:
-      #print "wind speed mismatch"
+      #logging.error("wind speed mismatch")
       return
   
     # TODO: verify checksum
@@ -96,7 +96,8 @@ class Anemometer(threading.Thread):
     self.init_gpio()
     raw_frame = []
     first = 0
-    freq_delay = 0.00093
+    freq_delay = 0.001
+    freq_delay2 = freq_delay + 0.0003
     #print time.time()
     while True:
       start = int(round(time.time() * 1000000))
@@ -105,26 +106,23 @@ class Anemometer(threading.Thread):
       if len(raw_frame) >= 41:
         # Data raw_frame is 41 bits long and last about 49 msec
         if len(raw_frame) > 0:
-          #print "Data Frame (length:%d):" % len(raw_frame)
           frame = raw_frame[0:41]
+          #logging.info("Data Frame (length:%d): [%s]" % (len(raw_frame), json.dumps(frame)))
           #time_since_last_frame = int(round(time.time() * 1000000)) - last_frame
           #print time_since_last_frame # ~ 2140000
           self.parse_frame(frame)
-          time.sleep(2.1)
+          time.sleep(1.9)
           #last_frame = int(round(time.time() * 1000000))
         raw_frame = []
         first = 0
       freq = None
       if len(raw_frame) == 0 and v == 1:
         first = int(round(time.time() * 1000000))
-        freq = freq_delay + freq_delay/3
+        freq = freq_delay2
       if first > 0:
         raw_frame.append(v)
         freq = freq_delay
     
-      #time.sleep(0.00095)  # not too bad
-      #time.sleep(0.00094)  # good too
-      #time.sleep(0.00093)  # best ?
       if freq: time.sleep(freq)
 
 
